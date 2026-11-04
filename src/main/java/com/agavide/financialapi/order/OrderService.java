@@ -5,6 +5,7 @@ import com.agavide.financialapi.asset.InstrumentRepository;
 import com.agavide.financialapi.asset.MarketData;
 import com.agavide.financialapi.asset.MarketDataRepository;
 import com.agavide.financialapi.portfolio.Holdings;
+import com.agavide.financialapi.shared.api.ConflictException;
 import com.agavide.financialapi.shared.api.ResourceNotFoundException;
 import com.agavide.financialapi.shared.domain.DomainException;
 import com.agavide.financialapi.shared.domain.Money;
@@ -136,5 +137,18 @@ public class OrderService {
 	private Order persistRejected(Instrument instrument, User user, int size, BigDecimal price,
 								  OrderType type, OrderSide side) {
 		return orderRepository.save(Order.newRejected(instrument, user, size, price, type, side, LocalDateTime.now()));
+	}
+
+	@Transactional
+	public Order cancelOrder(Integer userId, Integer orderId) {
+		Order order = orderRepository.findByIdAndUserIdWithLock(orderId, userId)
+				.orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId + " for user: " + userId));
+
+		if (!order.isNew()) {
+			throw new ConflictException("Order cannot be cancelled because it is " + order.getStatus());
+		}
+
+		order.cancel();
+		return orderRepository.save(order);
 	}
 }

@@ -24,6 +24,13 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return problem;
 	}
 
+	@ExceptionHandler(ConflictException.class)
+	public ProblemDetail handleConflictException(ConflictException ex) {
+		ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+		problem.setDetail(ex.getMessage());
+		return problem;
+	}
+
 	@ExceptionHandler(Exception.class)
 	public ProblemDetail handleGenericException(Exception ex) {
 		ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);

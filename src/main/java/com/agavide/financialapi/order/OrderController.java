@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -64,6 +65,29 @@ public class OrderController {
 		Order order = orderService.sendOrder(command);
 		HttpStatus status = order.isRejected() ? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.OK;
 		return ResponseEntity.status(status).body(toResponse(order));
+	}
+
+	@DeleteMapping("/{orderId}")
+	@Operation(
+			summary = "Cancel a NEW order",
+			description = """
+					Cancels an order that is still in NEW status.
+					The order is not deleted; its status is updated to CANCELLED.
+					Only the owner of the order can cancel it.
+					"""
+	)
+	@ApiResponse(responseCode = "200", description = "Order cancelled",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = OrderResponse.class)))
+	@ApiResponse(responseCode = "404", description = "Order not found for the user")
+	@ApiResponse(responseCode = "409", description = "Order is not in NEW status")
+	public ResponseEntity<OrderResponse> cancelOrder(
+			@Parameter(description = "User internal id", example = "1")
+			@PathVariable Integer userId,
+			@Parameter(description = "Order internal id", example = "4")
+			@PathVariable Integer orderId) {
+		Order order = orderService.cancelOrder(userId, orderId);
+		return ResponseEntity.ok(toResponse(order));
 	}
 
 	private void validateRequest(OrderRequest request) {

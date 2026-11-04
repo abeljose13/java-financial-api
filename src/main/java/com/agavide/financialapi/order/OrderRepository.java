@@ -1,10 +1,12 @@
 package com.agavide.financialapi.order;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,4 +34,12 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 		  AND o.user.id = :userId
 		""")
 	Optional<Order> findByIdAndUserId(@Param("orderId") Integer orderId, @Param("userId") Integer userId);
+
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("""
+		SELECT o FROM Order o
+		WHERE o.id = :orderId
+		  AND o.user.id = :userId
+		""")
+	Optional<Order> findByIdAndUserIdWithLock(@Param("orderId") Integer orderId, @Param("userId") Integer userId);
 }
