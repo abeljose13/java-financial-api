@@ -1,0 +1,17 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: financial-api:latest
+    container_name: financial-api
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      # Explicit mapping ensures the app receives the required variables.
+      # Values come from the .env file; do not commit real values.
+      POSTGRES_URL: ${POSTGRES_URL}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}

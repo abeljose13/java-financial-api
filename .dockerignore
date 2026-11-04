@@ -1,0 +1,14 @@
+.git
+.gitignore
+.gradle
+build/
+.idea
+.vscode
+.opencode/
+.env
+.env.example
+docs/
+HELP.md
+README.md
+*.md
+.DS_Store
