@@ -28,13 +28,6 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 		""")
 	List<Order> findFilledByUserIdOrderByDatetime(@Param("userId") Integer userId);
 
-	@Query("""
-		SELECT o FROM Order o
-		WHERE o.id = :orderId
-		  AND o.user.id = :userId
-		""")
-	Optional<Order> findByIdAndUserId(@Param("orderId") Integer orderId, @Param("userId") Integer userId);
-
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("""
 		SELECT o FROM Order o

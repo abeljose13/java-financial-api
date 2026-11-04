@@ -63,7 +63,7 @@ public class OrderController {
 		);
 
 		Order order = orderService.sendOrder(command);
-		HttpStatus status = order.isRejected() ? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.OK;
+		HttpStatus status = order.isRejected() ? HttpStatus.UNPROCESSABLE_CONTENT : HttpStatus.OK;
 		return ResponseEntity.status(status).body(toResponse(order));
 	}
 
