@@ -7,7 +7,8 @@ INSERT INTO users (id, email, accountNumber) VALUES
 INSERT INTO instruments (id, ticker, name, type) VALUES
   (1, 'TEST', 'Test Company S.A.', 'ACCIONES'),
   (2, 'OTHR', 'Other Company S.A.', 'ACCIONES'),
-  (3, 'ARS', 'PESOS', 'MONEDA');
+  (3, 'ARS', 'PESOS', 'MONEDA'),
+  (4, 'NOMD', 'No Market Data S.A.', 'ACCIONES');
 
 -- Market data
 INSERT INTO marketdata (instrumentId, date, open, high, low, close, previousClose) VALUES

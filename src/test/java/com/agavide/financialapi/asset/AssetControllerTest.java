@@ -33,8 +33,8 @@ class AssetControllerTest {
 	void shouldReturnAllAssetsWhenNoQuery() throws Exception {
 		mockMvc.perform(get("/api/v1/assets"))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$", hasSize(3)))
-				.andExpect(jsonPath("$[*].ticker").value(org.hamcrest.Matchers.containsInAnyOrder("ARS", "TEST", "OTHR")));
+				.andExpect(jsonPath("$", hasSize(4)))
+				.andExpect(jsonPath("$[*].ticker").value(org.hamcrest.Matchers.containsInAnyOrder("ARS", "TEST", "OTHR", "NOMD")));
 	}
 
 	@Test

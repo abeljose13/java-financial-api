@@ -29,7 +29,7 @@ class InstrumentRepositoryTest {
 	@Test
 	void shouldFindAllInstruments() {
 		List<Instrument> instruments = instrumentRepository.findAll();
-		assertThat(instruments).hasSize(3);
+		assertThat(instruments).hasSize(4);
 	}
 
 	@Test
