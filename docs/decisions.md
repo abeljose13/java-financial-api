@@ -9,6 +9,15 @@ Este documento registra las decisiones de diseño, supuestos y trade-offs acorda
 
 ---
 
+## Glosario de acrónimos
+
+| Acrónimo | Significado | Uso en este documento |
+|---|---|---|
+| **WAC** | **Weighted Average Cost** (costo promedio ponderado) | Política para calcular el costo de adquisición de las acciones que aún se mantienen en una posición abierta. |
+| **P&L** | **Profit and Loss** (ganancias y pérdidas) | Resultado financiero de una operación. En particular, *P&L realizado* se refiere a la ganancia/pérdida obtenida al vender acciones. |
+
+---
+
 ## 1. Alcance funcional interpretado del challenge
 
 El challenge pide tres capacidades principales en su resumen:
@@ -75,7 +84,7 @@ Solo las solicitudes que superan la validación de forma y de existencia de usua
 
 ### D-2 — Rendimiento: posición abierta con WAC, sin P&L realizado
 
-**Decisión**: el indicador porcentual de cada posición se calcula como rendimiento no realizado de la posición abierta, usando costo promedio ponderado (WAC) para las acciones que aún se poseen. No incluye ganancias/pérdidas realizadas por ventas anteriores.
+**Decisión**: el indicador porcentual de cada posición se calcula como rendimiento no realizado de la posición abierta, usando costo promedio ponderado (Weighted Average Cost, WAC) para las acciones que aún se poseen. No incluye ganancias/pérdidas (Profit and Loss, P&L) realizadas por ventas anteriores.
 
 **Fórmula**:
 
