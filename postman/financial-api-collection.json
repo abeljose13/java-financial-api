@@ -1,0 +1,293 @@
+{
+  "info": {
+    "name": "financial-api",
+    "description": "Collection for the financial-api challenge. Run against a local instance started with POSTGRES_URL/USER/PASSWORD set.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Assets",
+      "item": [
+        {
+          "name": "Search all assets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/assets",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "assets"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search by ticker",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/assets?query=TEST",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "assets"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "TEST"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Portfolio",
+      "item": [
+        {
+          "name": "Get user portfolio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/portfolio",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}", "portfolio"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Market BUY",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instrumentId\": {{instrumentId}},\n  \"type\": \"MARKET\",\n  \"side\": \"BUY\",\n  \"quantity\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}", "orders"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Market BUY by amountArs",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instrumentId\": {{instrumentId}},\n  \"type\": \"MARKET\",\n  \"side\": \"BUY\",\n  \"amountArs\": 5500\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}", "orders"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Market SELL",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instrumentId\": {{instrumentId}},\n  \"type\": \"MARKET\",\n  \"side\": \"SELL\",\n  \"quantity\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}", "orders"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Limit BUY",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instrumentId\": {{instrumentId}},\n  \"type\": \"LIMIT\",\n  \"side\": \"BUY\",\n  \"quantity\": 2,\n  \"limitPrice\": 900\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}", "orders"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Rejected BUY - insufficient funds",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instrumentId\": {{instrumentId}},\n  \"type\": \"MARKET\",\n  \"side\": \"BUY\",\n  \"quantity\": 10000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}", "orders"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Rejected BUY - amount too small",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instrumentId\": {{instrumentId}},\n  \"type\": \"MARKET\",\n  \"side\": \"BUY\",\n  \"amountArs\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}", "orders"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Rejected SELL - insufficient shares",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instrumentId\": {{instrumentId}},\n  \"type\": \"MARKET\",\n  \"side\": \"SELL\",\n  \"quantity\": 10000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}", "orders"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel order",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/orders/{{orderIdToCancel}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}", "orders", "{{orderIdToCancel}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "instrumentId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "orderIdToCancel",
+      "value": "4",
+      "type": "string"
+    }
+  ]
+}

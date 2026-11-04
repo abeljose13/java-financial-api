@@ -47,6 +47,8 @@ Documentación interactiva disponible en:
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - OpenAPI JSON: `http://localhost:8080/v3/api-docs`
 
+Colección Postman incluida en `postman/financial-api-collection.json` con environment template en `postman/financial-api-environment.json`. Incluye requests de búsqueda, portfolio, MARKET/LIMIT, rechazos y cancelación.
+
 ### Códigos HTTP principales
 
 | Código | Cuándo |

@@ -1,0 +1,29 @@
+{
+  "name": "financial-api-local",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "userId",
+      "value": "1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "instrumentId",
+      "value": "1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "orderIdToCancel",
+      "value": "4",
+      "type": "default",
+      "enabled": true
+    }
+  ]
+}
