@@ -13,8 +13,8 @@ public interface InstrumentRepository extends JpaRepository<Instrument, Integer>
 
 	@Query("""
 		SELECT i FROM Instrument i
-		WHERE LOWER(i.ticker) LIKE LOWER(CONCAT('%', :query, '%'))
-		   OR LOWER(i.name) LIKE LOWER(CONCAT('%', :query, '%'))
+		WHERE LOWER(i.ticker) LIKE LOWER(CONCAT('%', :query, '%')) ESCAPE '\\'
+		   OR LOWER(i.name) LIKE LOWER(CONCAT('%', :query, '%')) ESCAPE '\\'
 		ORDER BY i.ticker
 		""")
 	List<Instrument> searchByTickerOrName(@Param("query") String query);
