@@ -1,6 +1,9 @@
 package com.agavide.financialapi.portfolio;
 
 import com.agavide.financialapi.order.Order;
+import com.agavide.financialapi.order.OrderSide;
+import com.agavide.financialapi.order.OrderStatus;
+import com.agavide.financialapi.order.OrderType;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -13,7 +16,7 @@ class PositionTest {
 
 	@Test
 	void shouldCalculatePositionFromBuyOrders() {
-		Order buy = Order.newMarketBuy(null, null, 10, BigDecimal.valueOf(1000), LocalDateTime.now());
+		Order buy = buy(10, 1000);
 
 		Position position = Position.fromOrders(1, "TEST", "Test", List.of(buy),
 				BigDecimal.valueOf(1100), BigDecimal.valueOf(1050));
@@ -28,9 +31,9 @@ class PositionTest {
 
 	@Test
 	void shouldApplyWacWhenSellingPartially() {
-		Order buy1 = Order.newMarketBuy(null, null, 10, BigDecimal.valueOf(1000), LocalDateTime.now());
-		Order buy2 = Order.newMarketBuy(null, null, 10, BigDecimal.valueOf(1200), LocalDateTime.now());
-		Order sell = Order.newMarketSell(null, null, 5, BigDecimal.valueOf(1300), LocalDateTime.now());
+		Order buy1 = buy(10, 1000);
+		Order buy2 = buy(10, 1200);
+		Order sell = sell(5, 1300);
 
 		Position position = Position.fromOrders(1, "TEST", "Test", List.of(buy1, buy2, sell),
 				BigDecimal.valueOf(1300), BigDecimal.valueOf(1250));
@@ -45,8 +48,8 @@ class PositionTest {
 
 	@Test
 	void shouldReturnNullWhenPositionIsClosed() {
-		Order buy = Order.newMarketBuy(null, null, 10, BigDecimal.valueOf(1000), LocalDateTime.now());
-		Order sell = Order.newMarketSell(null, null, 10, BigDecimal.valueOf(1200), LocalDateTime.now());
+		Order buy = buy(10, 1000);
+		Order sell = sell(10, 1200);
 
 		Position position = Position.fromOrders(1, "TEST", "Test", List.of(buy, sell),
 				BigDecimal.valueOf(1200), BigDecimal.valueOf(1100));
@@ -56,7 +59,7 @@ class PositionTest {
 
 	@Test
 	void shouldHandleMissingMarketData() {
-		Order buy = Order.newMarketBuy(null, null, 10, BigDecimal.valueOf(1000), LocalDateTime.now());
+		Order buy = buy(10, 1000);
 
 		Position position = Position.fromOrders(1, "TEST", "Test", List.of(buy), null, null);
 
@@ -65,5 +68,15 @@ class PositionTest {
 		assertThat(position.getMarketValue()).isNull();
 		assertThat(position.getDailyReturnPercentage()).isNull();
 		assertThat(position.getTotalReturnPercentage()).isNull();
+	}
+
+	private static Order buy(int size, long price) {
+		return Order.create(null, null, size, BigDecimal.valueOf(price),
+				OrderType.MARKET, OrderSide.BUY, OrderStatus.FILLED, LocalDateTime.now());
+	}
+
+	private static Order sell(int size, long price) {
+		return Order.create(null, null, size, BigDecimal.valueOf(price),
+				OrderType.MARKET, OrderSide.SELL, OrderStatus.FILLED, LocalDateTime.now());
 	}
 }

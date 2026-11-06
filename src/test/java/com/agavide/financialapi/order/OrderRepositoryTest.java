@@ -26,12 +26,6 @@ class OrderRepositoryTest {
 	private OrderRepository orderRepository;
 
 	@Test
-	void shouldFindAllOrdersByUser() {
-		List<Order> orders = orderRepository.findAllByUserIdOrderByDatetime(1);
-		assertThat(orders).hasSize(6);
-	}
-
-	@Test
 	void shouldFindFilledOrdersByUser() {
 		List<Order> filled = orderRepository.findFilledByUserIdOrderByDatetime(1);
 		assertThat(filled).hasSize(3);
@@ -40,11 +34,14 @@ class OrderRepositoryTest {
 
 	@Test
 	void shouldMapEnumsAsStrings() {
-		List<Order> orders = orderRepository.findAllByUserIdOrderByDatetime(1);
+		List<Order> orders = orderRepository.findAll().stream()
+				.filter(order -> order.getUser().getId() == 1)
+				.toList();
 		long newCount = orders.stream().filter(Order::isNew).count();
 		long rejectedCount = orders.stream().filter(Order::isRejected).count();
 		long cancelledCount = orders.stream().filter(Order::isCancelled).count();
 
+		assertThat(orders).hasSize(6);
 		assertThat(newCount).isEqualTo(1);
 		assertThat(rejectedCount).isEqualTo(1);
 		assertThat(cancelledCount).isEqualTo(1);

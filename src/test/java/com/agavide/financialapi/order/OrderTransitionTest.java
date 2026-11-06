@@ -1,5 +1,6 @@
 package com.agavide.financialapi.order;
 
+import com.agavide.financialapi.shared.domain.ConflictException;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -12,14 +13,14 @@ class OrderTransitionTest {
 
 	@Test
 	void newLimitOrderShouldBeInStatusNew() {
-		Order order = Order.newLimitBuy(null, null, 10, BigDecimal.valueOf(100), LocalDateTime.now());
+		Order order = limit(OrderSide.BUY, OrderStatus.NEW);
 		assertThat(order.getStatus()).isEqualTo(OrderStatus.NEW);
 		assertThat(order.isNew()).isTrue();
 	}
 
 	@Test
 	void marketBuyShouldBeFilled() {
-		Order order = Order.newMarketBuy(null, null, 10, BigDecimal.valueOf(100), LocalDateTime.now());
+		Order order = market(OrderSide.BUY, OrderStatus.FILLED);
 		assertThat(order.getStatus()).isEqualTo(OrderStatus.FILLED);
 		assertThat(order.isFilled()).isTrue();
 		assertThat(order.affectsPosition()).isTrue();
@@ -34,16 +35,26 @@ class OrderTransitionTest {
 
 	@Test
 	void cancelShouldMoveToCancelled() {
-		Order order = Order.newLimitBuy(null, null, 10, BigDecimal.valueOf(100), LocalDateTime.now());
+		Order order = limit(OrderSide.BUY, OrderStatus.NEW);
 		order.cancel();
 		assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
 	}
 
 	@Test
 	void filledOrderCannotBeCancelled() {
-		Order order = Order.newMarketBuy(null, null, 10, BigDecimal.valueOf(100), LocalDateTime.now());
+		Order order = market(OrderSide.BUY, OrderStatus.FILLED);
 		assertThatThrownBy(order::cancel)
-			.isInstanceOf(com.agavide.financialapi.shared.domain.DomainException.class)
-			.hasMessageContaining("Only NEW orders can be cancelled");
+			.isInstanceOf(ConflictException.class)
+			.hasMessage("Order cannot be cancelled because it is FILLED");
+	}
+
+	private static Order market(OrderSide side, OrderStatus status) {
+		return Order.create(null, null, 10, BigDecimal.valueOf(100),
+				OrderType.MARKET, side, status, LocalDateTime.now());
+	}
+
+	private static Order limit(OrderSide side, OrderStatus status) {
+		return Order.create(null, null, 10, BigDecimal.valueOf(100),
+				OrderType.LIMIT, side, status, LocalDateTime.now());
 	}
 }

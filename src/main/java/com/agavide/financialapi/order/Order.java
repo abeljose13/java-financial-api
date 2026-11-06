@@ -1,7 +1,7 @@
 package com.agavide.financialapi.order;
 
 import com.agavide.financialapi.asset.Instrument;
-import com.agavide.financialapi.shared.domain.DomainException;
+import com.agavide.financialapi.shared.domain.ConflictException;
 import com.agavide.financialapi.shared.domain.Money;
 import com.agavide.financialapi.user.User;
 import jakarta.persistence.Column;
@@ -59,8 +59,8 @@ public class Order {
 	protected Order() {
 	}
 
-	public Order(Instrument instrument, User user, Integer size, BigDecimal price,
-				 OrderType type, OrderSide side, OrderStatus status, LocalDateTime datetime) {
+	private Order(Instrument instrument, User user, Integer size, BigDecimal price,
+				  OrderType type, OrderSide side, OrderStatus status, LocalDateTime datetime) {
 		this.instrument = instrument;
 		this.user = user;
 		this.size = size;
@@ -71,33 +71,18 @@ public class Order {
 		this.datetime = datetime;
 	}
 
-	public static Order newMarketBuy(Instrument instrument, User user, int size, BigDecimal price, LocalDateTime datetime) {
-		return new Order(instrument, user, size, price, OrderType.MARKET, OrderSide.BUY, OrderStatus.FILLED, datetime);
-	}
-
-	public static Order newMarketSell(Instrument instrument, User user, int size, BigDecimal price, LocalDateTime datetime) {
-		return new Order(instrument, user, size, price, OrderType.MARKET, OrderSide.SELL, OrderStatus.FILLED, datetime);
-	}
-
-	public static Order newLimitBuy(Instrument instrument, User user, int size, BigDecimal price, LocalDateTime datetime) {
-		return new Order(instrument, user, size, price, OrderType.LIMIT, OrderSide.BUY, OrderStatus.NEW, datetime);
-	}
-
-	public static Order newLimitSell(Instrument instrument, User user, int size, BigDecimal price, LocalDateTime datetime) {
-		return new Order(instrument, user, size, price, OrderType.LIMIT, OrderSide.SELL, OrderStatus.NEW, datetime);
-	}
-
-	public static Order newRejected(Instrument instrument, User user, int size, BigDecimal price,
-									OrderType type, OrderSide side, LocalDateTime datetime) {
-		return new Order(instrument, user, size, price, type, side, OrderStatus.REJECTED, datetime);
+	/**
+	 * Single factory for trade orders. The initial status is decided by the
+	 * {@link OrderTypeStrategy} that owns the order type (MARKET -> FILLED, LIMIT -> NEW),
+	 * or set to REJECTED for business rejections.
+	 */
+	public static Order create(Instrument instrument, User user, int size, BigDecimal price,
+							   OrderType type, OrderSide side, OrderStatus status, LocalDateTime datetime) {
+		return new Order(instrument, user, size, price, type, side, status, datetime);
 	}
 
 	public static Order newCashIn(Instrument currency, User user, int amount, LocalDateTime datetime) {
 		return new Order(currency, user, amount, BigDecimal.ONE, OrderType.MARKET, OrderSide.CASH_IN, OrderStatus.FILLED, datetime);
-	}
-
-	public static Order newCashOut(Instrument currency, User user, int amount, LocalDateTime datetime) {
-		return new Order(currency, user, amount, BigDecimal.ONE, OrderType.MARKET, OrderSide.CASH_OUT, OrderStatus.FILLED, datetime);
 	}
 
 	public Money totalAmount() {
@@ -141,8 +126,8 @@ public class Order {
 	}
 
 	public void cancel() {
-		if (status != OrderStatus.NEW) {
-			throw new DomainException("Only NEW orders can be cancelled");
+		if (!isNew()) {
+			throw new ConflictException("Order cannot be cancelled because it is " + status);
 		}
 		this.status = OrderStatus.CANCELLED;
 	}

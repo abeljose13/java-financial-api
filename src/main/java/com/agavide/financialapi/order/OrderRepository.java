@@ -16,13 +16,6 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 	@Query("""
 		SELECT o FROM Order o
 		WHERE o.user.id = :userId
-		ORDER BY o.datetime ASC, o.id ASC
-		""")
-	List<Order> findAllByUserIdOrderByDatetime(@Param("userId") Integer userId);
-
-	@Query("""
-		SELECT o FROM Order o
-		WHERE o.user.id = :userId
 		  AND o.status = com.agavide.financialapi.order.OrderStatus.FILLED
 		ORDER BY o.datetime ASC, o.id ASC
 		""")

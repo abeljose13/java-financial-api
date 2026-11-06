@@ -2,10 +2,7 @@ package com.agavide.financialapi.order;
 
 import com.agavide.financialapi.asset.Instrument;
 import com.agavide.financialapi.asset.InstrumentRepository;
-import com.agavide.financialapi.asset.MarketData;
-import com.agavide.financialapi.asset.MarketDataRepository;
 import com.agavide.financialapi.portfolio.Holdings;
-import com.agavide.financialapi.shared.api.ConflictException;
 import com.agavide.financialapi.shared.api.ResourceNotFoundException;
 import com.agavide.financialapi.shared.domain.DomainException;
 import com.agavide.financialapi.shared.domain.Money;
@@ -17,7 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class OrderService {
@@ -25,14 +24,17 @@ public class OrderService {
 	private final UserRepository userRepository;
 	private final InstrumentRepository instrumentRepository;
 	private final OrderRepository orderRepository;
-	private final MarketDataRepository marketDataRepository;
+	private final Map<OrderType, OrderTypeStrategy> strategies;
 
 	public OrderService(UserRepository userRepository, InstrumentRepository instrumentRepository,
-						OrderRepository orderRepository, MarketDataRepository marketDataRepository) {
+						OrderRepository orderRepository, List<OrderTypeStrategy> typeStrategies) {
 		this.userRepository = userRepository;
 		this.instrumentRepository = instrumentRepository;
 		this.orderRepository = orderRepository;
-		this.marketDataRepository = marketDataRepository;
+		this.strategies = new EnumMap<>(OrderType.class);
+		for (OrderTypeStrategy strategy : typeStrategies) {
+			this.strategies.put(strategy.type(), strategy);
+		}
 	}
 
 	@Transactional
@@ -46,97 +48,20 @@ public class OrderService {
 		if (instrument.isCurrency()) {
 			throw new DomainException("Cannot trade currency instrument through this endpoint");
 		}
-
 		if (command.side() != OrderSide.BUY && command.side() != OrderSide.SELL) {
 			throw new DomainException("Order side must be BUY or SELL");
 		}
 
-		BigDecimal price = resolvePrice(command, instrument);
-		Integer size = resolveSize(command, price);
+		OrderTypeStrategy strategy = strategyFor(command.type());
+		BigDecimal price = strategy.resolvePrice(command, instrument);
+		int size = resolveSize(command, price);
 
-		if (size == null || size <= 0) {
-			if (command.amountArs() != null && command.side() == OrderSide.BUY) {
-				return persistRejected(instrument, user, 0, price, command.type(), command.side());
-			}
-			throw new DomainException("Quantity must be a positive integer");
-		}
+		OrderStatus status = size > 0 && isExecutable(command.side(), instrument.getId(), size, price, user.getId())
+				? strategy.initialStatus()
+				: OrderStatus.REJECTED;
 
-		List<Order> filledOrders = orderRepository.findFilledByUserIdOrderByDatetime(user.getId());
-		Holdings holdings = new Holdings(filledOrders);
-
-		boolean executable = canExecute(command.side(), instrument.getId(), size, price, holdings);
-
-		if (!executable) {
-			return persistRejected(instrument, user, size, price, command.type(), command.side());
-		}
-
-		return orderRepository.save(createExecutableOrder(command, instrument, user, size, price));
-	}
-
-	private BigDecimal resolvePrice(SendOrderCommand command, Instrument instrument) {
-		if (command.type() == OrderType.LIMIT) {
-			if (command.limitPrice() == null || command.limitPrice().compareTo(BigDecimal.ZERO) <= 0) {
-				throw new DomainException("Limit price must be positive");
-			}
-			return command.limitPrice();
-		}
-
-		MarketData latest = marketDataRepository.findLatestByInstrumentId(instrument.getId()).orElse(null);
-		if (latest == null) {
-			return BigDecimal.ZERO;
-		}
-		return latest.getClose();
-	}
-
-	private Integer resolveSize(SendOrderCommand command, BigDecimal price) {
-		if (command.side() == OrderSide.SELL) {
-			if (command.quantity() == null) {
-				throw new DomainException("Quantity is required for SELL orders");
-			}
-			return command.quantity();
-		}
-
-		if (command.quantity() != null && command.amountArs() != null) {
-			throw new DomainException("Provide either quantity or amountArs, not both");
-		}
-		if (command.quantity() != null) {
-			return command.quantity();
-		}
-		if (command.amountArs() != null) {
-			if (price == null || price.compareTo(BigDecimal.ZERO) == 0) {
-				return 0;
-			}
-			return command.amountArs().divide(price, 0, RoundingMode.FLOOR).intValueExact();
-		}
-		throw new DomainException("Quantity or amountArs is required for BUY orders");
-	}
-
-	private boolean canExecute(OrderSide side, Integer instrumentId, int size, BigDecimal price, Holdings holdings) {
-		if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) {
-			return false;
-		}
-		if (side == OrderSide.BUY) {
-			Money required = Money.of(price).multiply(size);
-			return holdings.cash().isGreaterThanOrEqualTo(required);
-		}
-		return holdings.sharesOf(instrumentId) >= size;
-	}
-
-	private Order createExecutableOrder(SendOrderCommand command, Instrument instrument, User user, int size, BigDecimal price) {
-		LocalDateTime now = LocalDateTime.now();
-		if (command.type() == OrderType.MARKET) {
-			return command.side() == OrderSide.BUY
-					? Order.newMarketBuy(instrument, user, size, price, now)
-					: Order.newMarketSell(instrument, user, size, price, now);
-		}
-		return command.side() == OrderSide.BUY
-				? Order.newLimitBuy(instrument, user, size, price, now)
-				: Order.newLimitSell(instrument, user, size, price, now);
-	}
-
-	private Order persistRejected(Instrument instrument, User user, int size, BigDecimal price,
-								  OrderType type, OrderSide side) {
-		return orderRepository.save(Order.newRejected(instrument, user, size, price, type, side, LocalDateTime.now()));
+		return orderRepository.save(Order.create(instrument, user, size, price,
+				command.type(), command.side(), status, LocalDateTime.now()));
 	}
 
 	@Transactional
@@ -144,11 +69,71 @@ public class OrderService {
 		Order order = orderRepository.findByIdAndUserIdWithLock(orderId, userId)
 				.orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId + " for user: " + userId));
 
-		if (!order.isNew()) {
-			throw new ConflictException("Order cannot be cancelled because it is " + order.getStatus());
-		}
-
 		order.cancel();
 		return orderRepository.save(order);
+	}
+
+	private OrderTypeStrategy strategyFor(OrderType type) {
+		OrderTypeStrategy strategy = strategies.get(type);
+		if (strategy == null) {
+			throw new DomainException("Unsupported order type: " + type);
+		}
+		return strategy;
+	}
+
+	/**
+	 * Returns the number of shares for the request. A BUY by amount may resolve to 0 shares,
+	 * which the caller persists as REJECTED (decisions.md D-4).
+	 */
+	private int resolveSize(SendOrderCommand command, BigDecimal price) {
+		if (command.side() == OrderSide.SELL) {
+			if (command.quantity() == null) {
+				throw new DomainException("Quantity is required for SELL orders");
+			}
+			return requirePositive(command.quantity());
+		}
+
+		if (command.quantity() != null && command.amountArs() != null) {
+			throw new DomainException("Provide either quantity or amountArs, not both");
+		}
+		if (command.quantity() != null) {
+			return requirePositive(command.quantity());
+		}
+		if (command.amountArs() == null) {
+			throw new DomainException("Quantity or amountArs is required for BUY orders");
+		}
+		return sharesFromAmount(command.amountArs(), price);
+	}
+
+	private static int requirePositive(int quantity) {
+		if (quantity <= 0) {
+			throw new DomainException("Quantity must be a positive integer");
+		}
+		return quantity;
+	}
+
+	private static int sharesFromAmount(BigDecimal amount, BigDecimal price) {
+		if (amount.signum() <= 0) {
+			throw new DomainException("amountArs must be positive");
+		}
+		if (price.signum() == 0) {
+			return 0;
+		}
+		try {
+			return amount.divide(price, 0, RoundingMode.FLOOR).intValueExact();
+		} catch (ArithmeticException ex) {
+			throw new DomainException("amountArs is too large");
+		}
+	}
+
+	private boolean isExecutable(OrderSide side, Integer instrumentId, int size, BigDecimal price, Integer userId) {
+		if (price.signum() <= 0) {
+			return false;
+		}
+		Holdings holdings = new Holdings(orderRepository.findFilledByUserIdOrderByDatetime(userId));
+		if (side == OrderSide.BUY) {
+			return holdings.cash().isGreaterThanOrEqualTo(Money.of(price).multiply(size));
+		}
+		return holdings.sharesOf(instrumentId) >= size;
 	}
 }
