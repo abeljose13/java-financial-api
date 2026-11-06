@@ -18,16 +18,16 @@ El proyecto sigue una arquitectura en capas de Spring con DDD táctico pragmáti
 ```text
 com.agavide.financialapi
 ├── asset/          # Instrumentos y marketdata
-├── portfolio/      # Portfolio, posiciones y holdings derivados del ledger
-├── order/          # Órdenes, envío y cancelación
+├── portfolio/      # Portfolio y posiciones (lectura del ledger)
+├── order/          # Órdenes, envío, cancelación y holdings derivados del ledger
 ├── user/           # Usuarios
 └── shared/
-    ├── domain/     # Value objects (Money, ShareQuantity) y excepciones
+    ├── domain/     # Value objects (Money) y excepciones
     └── api/        # Manejo global de errores HTTP
 ```
 
 - **Controllers**: validación de forma del request y construcción de respuestas HTTP.
-- **Services**: orquestación de repositorios, transacciones y locks pesimistas por `userId`.
+- **Services**: orquestación de repositorios, transacciones y locks pesimistas por `userId`. El comportamiento por tipo de orden vive en estrategias `OrderTypeStrategy` (ver `docs/decisions.md` §9).
 - **Domain**: entidades JPA como clases, VOs como records, enums persistidos como STRING; las reglas financieras viven en `Order`, `Portfolio`, `Position`, `Holdings` y `Money`.
 - **Repositories**: acceso a datos con queries explícitas; sin lógica de negocio.
 
@@ -53,7 +53,8 @@ Colección Postman incluida en `postman/financial-api-collection.json` con envir
 
 | Código | Cuándo |
 |---|---|
-| `200 OK` | Consulta exitosa o orden aceptada (`FILLED`/`NEW`/`CANCELLED`). |
+| `200 OK` | Consulta exitosa u orden cancelada (`CANCELLED`). |
+| `201 Created` | Orden aceptada y persistida (`FILLED`/`NEW`). |
 | `400 Bad Request` | Payload malformado, campos inválidos o instrumento MONEDA. No se persiste orden. |
 | `404 Not Found` | Usuario, instrumento u orden no encontrada. No se persiste orden. |
 | `409 Conflict` | Intentar cancelar una orden que no está en estado `NEW`. |

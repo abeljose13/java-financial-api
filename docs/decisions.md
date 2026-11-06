@@ -124,6 +124,7 @@ rendimiento (%) = ((marketValue − remainingCostBasis) / remainingCostBasis) ×
 | Acciones insuficientes (SELL) | Sí | `422` | `REJECTED` |
 | Monto que convierte a 0 acciones | Sí | `422` | `REJECTED` |
 | Payload malformado | No | `400` | — |
+| `amountArs` menor o igual a 0 | No | `400` | — |
 | Usuario/instrumento inexistente | No | `404` | — |
 | Orden no cancelable | No | `409` | — |
 
@@ -225,3 +226,47 @@ El esquema no contiene una tabla de inventario inicial ni una posición de apert
 5. Etapa 5: cancelación.
 6. Etapa 6: ejecución local y Docker contra Neon.
 7. Etapa 7: OpenAPI y colección Postman.
+
+---
+
+## 9. Extensibilidad
+
+### 9.1 Diseño actual por tipo de orden
+
+El comportamiento que depende del tipo de orden (`OrderType`) está encapsulado en `OrderTypeStrategy`:
+
+- `type()`: tipo que atiende la estrategia.
+- `resolvePrice(command, instrument)`: precio de referencia de la orden y validación de sus campos.
+- `initialStatus()`: estado con el que nace una orden válida (`FILLED` o `NEW`).
+
+Implementaciones actuales:
+
+| Clase | Tipo | Precio | Estado inicial |
+|---|---|---|---|
+| `MarketOrderStrategy` | `MARKET` | Último `close` de `marketdata`; `0` si no hay datos | `FILLED` |
+| `LimitOrderStrategy` | `LIMIT` | `limitPrice` redondeado a 2 decimales | `NEW` |
+
+`OrderService` no tiene ramas por tipo. Recibe `List<OrderTypeStrategy>` por inyección de Spring y la indexa por `OrderType` en un `EnumMap`. Una orden de tipo sin estrategia registrada responde `400`.
+
+### 9.2 Ajuste requerido para agregar un nuevo tipo
+
+Ejemplo: agregar `STOP`.
+
+1. `order/OrderType.java`: agregar la constante `STOP`.
+2. Crear una clase `@Component` en el paquete `order` que implemente `OrderTypeStrategy`:
+   - `type()` retorna `OrderType.STOP`.
+   - `resolvePrice(...)` valida y devuelve el precio de referencia de la orden.
+   - `initialStatus()` retorna `NEW` si la orden queda pendiente, o `FILLED` si se ejecuta de inmediato.
+3. Si el tipo requiere campos nuevos (ej. `stopPrice`):
+   - Agregar el campo a `OrderRequest` y `SendOrderCommand`.
+   - Validarlo dentro de la estrategia, no en `OrderController`.
+4. Documentar el tipo en las anotaciones OpenAPI de `OrderController` y en la colección Postman (`postman/financial-api-collection.json`).
+5. Agregar tests: al menos un test de controller para el nuevo tipo y un test de transición de estado.
+
+No requieren cambios: `OrderService`, `Order`, `Holdings`, `Position` y `PortfolioService`. Estas clases dependen del lado (`side`) y del estado (`status`), no del tipo.
+
+### 9.3 Restricciones actuales
+
+- La columna `orders.type` es `VARCHAR(10)` sin restricción `CHECK` (según `src/test/resources/schema-test.sql`). Un nombre de tipo debe caber en 10 caracteres. Verificar la base real antes de agregar un tipo, porque el esquema productivo no está versionado en este repositorio.
+- Si el nuevo tipo deja la orden en `NEW` y requiere ejecución posterior, se necesita un proceso de ejecución diferida. Hoy no existe (ver D-1 y sección 6).
+- Agregar un nuevo lado (distinto de `BUY`/`SELL`/`CASH_IN`/`CASH_OUT`) sí requiere cambios en `Holdings`, `Position` y las validaciones de `OrderService.sendOrder`. Es un cambio mayor, distinto de agregar un tipo.
