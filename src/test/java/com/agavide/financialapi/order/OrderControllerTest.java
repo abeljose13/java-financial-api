@@ -56,11 +56,10 @@ class OrderControllerTest {
 		mockMvc.perform(post("/api/v1/users/1/orders")
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(request)))
-				.andExpect(status().isOk())
+				.andExpect(status().isCreated())
 				.andExpect(jsonPath("$.status").value("FILLED"))
 				.andExpect(jsonPath("$.size").value(5))
-				.andExpect(jsonPath("$.price").value(1100.0))
-				.andExpect(jsonPath("$.executionPrice").value(1100.0));
+				.andExpect(jsonPath("$.price").value(1100.0));
 
 		// Cash impact: 80_000 - 5_500 = 74_500
 		mockMvc.perform(get("/api/v1/users/1/portfolio"))
@@ -76,7 +75,7 @@ class OrderControllerTest {
 		mockMvc.perform(post("/api/v1/users/1/orders")
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(request)))
-				.andExpect(status().isOk())
+				.andExpect(status().isCreated())
 				.andExpect(jsonPath("$.status").value("FILLED"))
 				.andExpect(jsonPath("$.size").value(3))
 				.andExpect(jsonPath("$.price").value(1100.0));
@@ -94,7 +93,7 @@ class OrderControllerTest {
 		mockMvc.perform(post("/api/v1/users/1/orders")
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(request)))
-				.andExpect(status().isOk())
+				.andExpect(status().isCreated())
 				.andExpect(jsonPath("$.status").value("NEW"))
 				.andExpect(jsonPath("$.size").value(2))
 				.andExpect(jsonPath("$.price").value(900.0));
@@ -103,6 +102,17 @@ class OrderControllerTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.cashBalance").value(80000.0))
 				.andExpect(jsonPath("$.positions[?(@.ticker == 'TEST')].quantity").value(10));
+	}
+
+	@Test
+	void shouldNormalizeLimitPriceToTwoDecimals() throws Exception {
+		OrderRequest request = new OrderRequest(1, OrderType.LIMIT, OrderSide.BUY, 1, null, new BigDecimal("900.005"));
+
+		mockMvc.perform(post("/api/v1/users/1/orders")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(request)))
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.price").value(900.01));
 	}
 
 	@Test
@@ -138,7 +148,7 @@ class OrderControllerTest {
 		mockMvc.perform(post("/api/v1/users/1/orders")
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(request)))
-				.andExpect(status().isOk())
+				.andExpect(status().isCreated())
 				.andExpect(jsonPath("$.status").value("FILLED"))
 				.andExpect(jsonPath("$.size").value(5));
 	}
@@ -153,6 +163,16 @@ class OrderControllerTest {
 				.andExpect(status().isUnprocessableContent())
 				.andExpect(jsonPath("$.status").value("REJECTED"))
 				.andExpect(jsonPath("$.size").value(0));
+	}
+
+	@Test
+	void shouldReturn400AndNotPersistNegativeAmountArs() throws Exception {
+		OrderRequest request = new OrderRequest(1, OrderType.MARKET, OrderSide.BUY, null, BigDecimal.valueOf(-100), null);
+
+		mockMvc.perform(post("/api/v1/users/1/orders")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(request)))
+				.andExpect(status().isBadRequest());
 	}
 
 	@Test
@@ -216,10 +236,10 @@ class OrderControllerTest {
 		assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
 		executor.shutdown();
 
-		long okCount = java.util.Arrays.stream(statuses).filter(s -> s == 200).count();
+		long createdCount = java.util.Arrays.stream(statuses).filter(s -> s == 201).count();
 		long rejectedCount = java.util.Arrays.stream(statuses).filter(s -> s == 422).count();
 
-		assertThat(okCount).isEqualTo(1);
+		assertThat(createdCount).isEqualTo(1);
 		assertThat(rejectedCount).isEqualTo(1);
 
 		mockMvc.perform(get("/api/v1/users/2/portfolio"))

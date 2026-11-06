@@ -34,9 +34,6 @@ public record OrderResponse(
 		@Schema(description = "Order price in ARS per share", example = "1100.00")
 		BigDecimal price,
 
-		@Schema(description = "Execution price in ARS per share. For MARKET equals market close; for LIMIT equals limitPrice", example = "1100.00")
-		BigDecimal executionPrice,
-
 		@Schema(description = "Order timestamp", example = "2026-11-04T12:34:56")
 		LocalDateTime datetime
 ) {

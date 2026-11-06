@@ -40,7 +40,7 @@ public class OrderController {
 					and the response returns HTTP 422.
 					"""
 	)
-	@ApiResponse(responseCode = "200", description = "Order created (FILLED or NEW)",
+	@ApiResponse(responseCode = "201", description = "Order created (FILLED or NEW)",
 			content = @Content(mediaType = "application/json",
 					schema = @Schema(implementation = OrderResponse.class)))
 	@ApiResponse(responseCode = "400", description = "Malformed request (e.g. missing quantity, invalid instrument type)")
@@ -63,7 +63,7 @@ public class OrderController {
 		);
 
 		Order order = orderService.sendOrder(command);
-		HttpStatus status = order.isRejected() ? HttpStatus.UNPROCESSABLE_CONTENT : HttpStatus.OK;
+		HttpStatus status = order.isRejected() ? HttpStatus.UNPROCESSABLE_CONTENT : HttpStatus.CREATED;
 		return ResponseEntity.status(status).body(toResponse(order));
 	}
 
@@ -111,7 +111,6 @@ public class OrderController {
 				order.getSide(),
 				order.getType(),
 				order.getSize(),
-				order.getPrice(),
 				order.getPrice(),
 				order.getDatetime()
 		);
