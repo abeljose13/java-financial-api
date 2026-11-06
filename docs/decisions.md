@@ -270,3 +270,19 @@ No requieren cambios: `OrderService`, `Order`, `Holdings`, `Position` y `Portfol
 - La columna `orders.type` es `VARCHAR(10)` sin restricción `CHECK` (según `src/test/resources/schema-test.sql`). Un nombre de tipo debe caber en 10 caracteres. Verificar la base real antes de agregar un tipo, porque el esquema productivo no está versionado en este repositorio.
 - Si el nuevo tipo deja la orden en `NEW` y requiere ejecución posterior, se necesita un proceso de ejecución diferida. Hoy no existe (ver D-1 y sección 6).
 - Agregar un nuevo lado (distinto de `BUY`/`SELL`/`CASH_IN`/`CASH_OUT`) sí requiere cambios en `Holdings`, `Position` y las validaciones de `OrderService.sendOrder`. Es un cambio mayor, distinto de agregar un tipo.
+
+### 9.4 Ajuste requerido para soportar movimientos de efectivo
+
+Aunque `OrderSide` y el ledger contemplan `CASH_IN` y `CASH_OUT`, el endpoint actual de órdenes solo acepta `BUY` y `SELL`. Para soportar transferencias entrantes y salientes se requiere:
+
+1. Agregar un caso de uso y endpoint específico para movimientos de efectivo (por ejemplo, `POST /api/v1/users/{userId}/cash-movements`), separado del envío de órdenes de mercado.
+2. Aceptar explícitamente el tipo (`CASH_IN` o `CASH_OUT`) y un importe positivo en ARS. Registrar el movimiento como `FILLED`, asociado al instrumento ARS, para que `Holdings` actualice el saldo desde el ledger.
+3. Para `CASH_OUT`, comprobar que el saldo disponible cubra el importe. Ejecutar la comprobación y el registro dentro de una transacción con lock del usuario, compartido con el flujo de órdenes, para evitar gastar el mismo saldo concurrentemente.
+4. Definir cómo se acredita un `CASH_IN`: en un entorno simulado puede registrarse directamente; en producción debe corresponder a fondos confirmados por la integración de pagos, no a un importe auto-declarado por el cliente.
+5. Documentar el contrato en OpenAPI y Postman, y agregar tests para ambos movimientos, saldo insuficiente y concurrencia.
+
+**Restricción de persistencia por verificar**: el esquema de test representa los movimientos existentes mediante `orders.size` (`INT`) y `price = 1`, por lo que solo expresa importes enteros en ARS. Antes de soportar importes con centavos, verificar el esquema productivo y decidir si se ajusta la persistencia o se agrega un ledger de efectivo con un importe `NUMERIC`.
+
+### 9.5 Alcance de las pruebas funcionales manuales con Postman
+
+Las pruebas funcionales manuales realizadas con Postman se ejecutaron con `userId = 1`, usuario precargado en la base de datos. `userId = 2` se utilizó únicamente para validar escenarios de órdenes rechazadas; no se validaron con ese usuario flujos exitosos de compra, venta o movimientos de efectivo.
