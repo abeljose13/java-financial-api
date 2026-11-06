@@ -1,7 +1,5 @@
-package com.agavide.financialapi.portfolio;
+package com.agavide.financialapi.order;
 
-import com.agavide.financialapi.order.Order;
-import com.agavide.financialapi.order.OrderSide;
 import com.agavide.financialapi.shared.domain.Money;
 
 import java.util.Collections;

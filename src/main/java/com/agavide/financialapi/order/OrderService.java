@@ -2,7 +2,6 @@ package com.agavide.financialapi.order;
 
 import com.agavide.financialapi.asset.Instrument;
 import com.agavide.financialapi.asset.InstrumentRepository;
-import com.agavide.financialapi.portfolio.Holdings;
 import com.agavide.financialapi.shared.api.ResourceNotFoundException;
 import com.agavide.financialapi.shared.domain.DomainException;
 import com.agavide.financialapi.shared.domain.Money;

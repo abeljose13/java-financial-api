@@ -5,6 +5,7 @@ import com.agavide.financialapi.asset.InstrumentRepository;
 import com.agavide.financialapi.asset.MarketData;
 import com.agavide.financialapi.asset.MarketDataRepository;
 import com.agavide.financialapi.order.Order;
+import com.agavide.financialapi.order.Holdings;
 import com.agavide.financialapi.order.OrderRepository;
 import com.agavide.financialapi.shared.api.ResourceNotFoundException;
 import com.agavide.financialapi.shared.domain.Money;
