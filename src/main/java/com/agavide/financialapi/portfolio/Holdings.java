@@ -49,8 +49,4 @@ public class Holdings {
 	public int sharesOf(Integer instrumentId) {
 		return sharesByInstrument.getOrDefault(instrumentId, 0);
 	}
-
-	public Map<Integer, Integer> sharesByInstrument() {
-		return sharesByInstrument;
-	}
 }

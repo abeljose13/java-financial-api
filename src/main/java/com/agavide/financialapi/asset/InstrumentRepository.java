@@ -6,7 +6,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface InstrumentRepository extends JpaRepository<Instrument, Integer> {
@@ -18,6 +17,4 @@ public interface InstrumentRepository extends JpaRepository<Instrument, Integer>
 		ORDER BY i.ticker
 		""")
 	List<Instrument> searchByTickerOrName(@Param("query") String query);
-
-	Optional<Instrument> findByTickerIgnoreCase(String ticker);
 }

@@ -21,10 +21,6 @@ public record Money(BigDecimal amount) {
 		return new Money(amount.setScale(SCALE, PRESENTATION_ROUNDING));
 	}
 
-	public static Money of(long amount) {
-		return new Money(BigDecimal.valueOf(amount).setScale(SCALE));
-	}
-
 	public Money add(Money other) {
 		return new Money(this.amount.add(other.amount));
 	}
@@ -37,24 +33,8 @@ public record Money(BigDecimal amount) {
 		return new Money(this.amount.multiply(BigDecimal.valueOf(quantity)));
 	}
 
-	public boolean isGreaterThan(Money other) {
-		return this.amount.compareTo(other.amount) > 0;
-	}
-
 	public boolean isGreaterThanOrEqualTo(Money other) {
 		return this.amount.compareTo(other.amount) >= 0;
-	}
-
-	public boolean isLessThan(Money other) {
-		return this.amount.compareTo(other.amount) < 0;
-	}
-
-	public boolean isNegative() {
-		return this.amount.compareTo(BigDecimal.ZERO) < 0;
-	}
-
-	public Money abs() {
-		return new Money(this.amount.abs());
 	}
 
 	public BigDecimal raw() {

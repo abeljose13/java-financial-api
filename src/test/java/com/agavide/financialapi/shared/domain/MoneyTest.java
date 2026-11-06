@@ -26,15 +26,9 @@ class MoneyTest {
 	void shouldCompareMoney() {
 		Money a = Money.of(BigDecimal.valueOf(100));
 		Money b = Money.of(BigDecimal.valueOf(200));
-		assertThat(a.isLessThan(b)).isTrue();
-		assertThat(b.isGreaterThan(a)).isTrue();
-		assertThat(a.isNegative()).isFalse();
-	}
-
-	@Test
-	void shouldDetectNegative() {
-		Money negative = new Money(BigDecimal.valueOf(-10));
-		assertThat(negative.isNegative()).isTrue();
+		assertThat(b.isGreaterThanOrEqualTo(a)).isTrue();
+		assertThat(a.isGreaterThanOrEqualTo(a)).isTrue();
+		assertThat(a.isGreaterThanOrEqualTo(b)).isFalse();
 	}
 
 	@Test
