@@ -40,7 +40,7 @@ public class PortfolioService {
 				.orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
 
 		List<Order> filledOrders = orderRepository.findFilledByUserIdOrderByDatetime(user.getId());
-		Money cashBalance = calculateCashBalance(filledOrders);
+		Money cashBalance = new Holdings(filledOrders).cash();
 
 		Map<Integer, List<Order>> ordersByInstrument = filledOrders.stream()
 				.filter(order -> !order.getInstrument().isCurrency())
@@ -52,18 +52,6 @@ public class PortfolioService {
 				.toList();
 
 		return new Portfolio(user.getId(), cashBalance, positions);
-	}
-
-	private Money calculateCashBalance(List<Order> filledOrders) {
-		Money balance = Money.zero();
-		for (Order order : filledOrders) {
-			Money amount = order.totalAmount();
-			switch (order.getSide()) {
-				case CASH_IN, SELL -> balance = balance.add(amount);
-				case CASH_OUT, BUY -> balance = balance.subtract(amount);
-			}
-		}
-		return balance;
 	}
 
 	private Position buildPosition(Integer instrumentId, List<Order> orders) {
